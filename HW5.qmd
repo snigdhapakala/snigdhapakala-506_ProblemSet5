@@ -1,11 +1,13 @@
 ---
 title: "506Problem5"
 author: "Snigdha Pakala"
-format: html
+format:
+  html:
+    embed-resources: true
 editor: visual
 ---
 
-## Link to GitHub Repository:
+## Link to GitHub Repository: <https://github.com/snigdhapakala/snigdhapakala-506_ProblemSet5>
 
 ### Problem 1
 
@@ -141,7 +143,7 @@ simplify(r3)
 
 #### Part 1c:
 
-```{r}
+```{r, error=TRUE}
 # Show that your validator does not allow the creation of rational’s with 0 denominator
 setValidity("rational", function(object) {
   # In my code, I require that numerator and denominator are integers (single numeric objects) where the denominator is not equal to 0
@@ -381,9 +383,7 @@ departures
 #####################################################################
 
 # Arrival delays by destination
-flights_arr_stats <- flights_10_plus[, .(mean_arr_delay = round(mean(arr_delay, na.rm = TRUE), 5), 
-                                         median_arr_delay = round(median(arr_delay, na.rm = TRUE), 5)), 
-                                     by = dest]
+flights_arr_stats <- flights_10_plus[, .(mean_arr_delay = round(mean(arr_delay, na.rm = TRUE), 5), median_arr_delay = round(median(arr_delay, na.rm = TRUE), 5)), by = dest]
 
 # Merge with airport names for arrival stats
 arrivals <- merge(flights_arr_stats, airports, by.x = "dest", by.y = "faa", all.x = TRUE)
