@@ -7,6 +7,8 @@ editor: visual
 
 ## Link to GitHub Repository:
 
+### Problem 1
+
 #### Part 1a:
 
 ```{r}
@@ -106,7 +108,7 @@ lcm <- function(a, b) {
 }
 ```
 
-#### Part 1b: 
+#### Part 1b:
 
 ```{r, error=TRUE}
 # Use the rational class to create the following 3 objects:
@@ -123,12 +125,12 @@ r1 * r2
 r1 / r2
 r1 + r3
 r1 * r3
-r2 / r3
+r2 / r3 # error number 1
 quotient(r1)
 quotient(r2)
 quotient(r2, digits = 3)
 quotient(r2, digits = 3.14)
-quotient(r2, digits = "avocado")
+quotient(r2, digits = "avocado") # error number 2
 q2 <- quotient(r2, digits = 3)
 q2
 quotient(r3)
@@ -161,6 +163,188 @@ new("rational", numerator = "3", denominator = 4) # errors because numerator is 
 new("rational", numerator = c(3, 5), denominator = 4) # errors because of vector in numerator
 ```
 
+### Problem 2
+
+#### Part 2a: 
+
+```{r}
+#####################################################################
+# my 3b from last homework:
+#####################################################################
+
+# art_sales <- read.csv("df_for_ml_improved_new_market.csv")
+# 
+# library(ggplot2)
+# library(dplyr)
+# library(tidyr)
+# library(stringr)
+# 
+# art_sales_long <- art_sales %>%
+#   pivot_longer(cols = starts_with("Genre__"), names_to = "Genre", values_to = "Sales") %>%
+#   filter(Sales == 1) %>%  # Filter only where genre is marked as 1
+#   mutate(Genre = str_replace(Genre, "Genre___", "")) %>%  # Remove "Genre___" prefix 
+#   count(year, Genre) %>%
+#   group_by(year) %>%
+#   mutate(Proportion = (n / sum(n)))  # Calculate proportion per year
+# 
+# 
+# ggplot(art_sales_long, aes(x = year, y = Proportion, fill = Genre)) +
+#   geom_bar(stat = "identity") +
+#   scale_fill_brewer(palette = "Pastel1") +
+#   labs(title = "Distribution of Art Sales by Genre Across Years",
+#        x = "Year",
+#        y = "Proportion of Sales",
+#        fill = "Genre") +
+#   theme_minimal(base_size = 14) +  
+#   theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+#####################################################################
+# Modifying my 3b from last hw using plotly:
+#####################################################################
+library(plotly)
+library(dplyr)
+library(tidyr)
+library(stringr)
+
+# Load and preprocess data
+art_sales <- read.csv("df_for_ml_improved_new_market.csv")
+
+# same as last time
+art_sales_long <- art_sales %>%
+  pivot_longer(cols = starts_with("Genre__"), names_to = "Genre", values_to = "Sales") %>%
+  filter(Sales == 1) %>%  # Filter only where genre is marked as 1
+  mutate(Genre = str_replace(Genre, "Genre___", "")) %>%  # Remove "Genre___" prefix 
+  count(year, Genre) %>%
+  group_by(year) %>%
+  mutate(Proportion = (n / sum(n)))  # Calculate proportion per year
+
+# Create an interactive plot with Plotly
+plot <- plot_ly(
+          data = art_sales_long,
+          x = ~year,
+          y = ~Proportion,
+          type = "bar",
+          color = ~Genre,
+          colors = "Pastel1") %>% 
+        layout(
+          title = "Distribution of Art Sales by Genre Across Years",
+          xaxis = list(title = "Year"),
+          yaxis = list(title = "Proportion of Sales"),
+        barmode = "stack",  # Stack the bars for grouped visualization
+        margin = list(
+          t = 80,  # Top margin
+          b = 70,  # Bottom margin 
+          l = 50,  # Left margin
+          r = 50   # Right margin
+        )
+      )
+
+# Display the plot
+plot
+
+```
+
+#### Part 2b:
+
+```{r}
+library(plotly)
+library(dplyr)
+library(tidyr)
+library(stringr)
+
+
+# Overall trend of average sales price over time
+art_sales_by_year <- art_sales %>%
+  group_by(year) %>%
+  summarize(avg_sales_price = mean(price_usd, na.rm = TRUE), .groups = "drop") %>%
+  ungroup()
+
+# Average sales price per genre per year
+average_price_genre <- art_sales %>%
+  pivot_longer(
+    cols = starts_with("Genre__"),
+    names_to = "Genre",
+    values_to = "Sales"
+  ) %>%
+  filter(Sales == 1) %>%  # Keep only rows where a genre is marked as sold
+  mutate(Genre = str_replace(Genre, "Genre___", "")) %>%
+  group_by(year, Genre) %>%
+  summarize(Average_Price = mean(price_usd, na.rm = TRUE), .groups = "drop") %>%
+  ungroup()
+
+# Combine data for an interactive plot
+combined_data <- bind_rows(
+  art_sales_by_year %>% mutate(Genre = "All", Average_Price = avg_sales_price),
+  average_price_genre
+)
+
+# Create interactive Plotly plot
+plot <- plot_ly(
+  data = combined_data,
+  x = ~year,
+  y = ~Average_Price,
+  type = "scatter",
+  mode = "lines+markers",
+  color = ~Genre,
+  colors = "Pastel1",
+  # Hover over info
+  text = ~paste(
+    "Year:", year,
+    "<br>Genre:", Genre,
+    "<br>Average Price (USD):", round(Average_Price, 2)
+  ),
+  hoverinfo = "text",
+  line = list(
+    width = ~ifelse(Genre == "All", 4, 2)  # Make "All" line thicker to see sales over time 
+  )
+) %>%
+  layout(
+    title = "Average Sales Price Over Time by Genre",
+    xaxis = list(
+      title = "Year",
+      tickangle = 45
+    ),
+    yaxis = list(
+      title = "Average Sale Price (USD)"
+    ),
+    # Add legend at the bottom of the graph
+    legend = list(
+      title = list(text = "Genre"),
+      orientation = "h",
+      x = 0.5,
+      xanchor = "center",
+      y = -0.2
+    ),
+    margin = list(t = 70, b = 80, l = 50, r = 30),
+    hovermode = "closest"
+  )
+
+# Display the plot
+plot
+
+```
+
+The two questions this graph is meant to answer are:
+
+1.   Is there a change in the sales price in USD over time?
+
+```{=html}
+<!-- -->
+```
+2.  How does the genre affect the change in sales price over time?
+
+By combining the data to include each individual genre as well as an "all genres" trendline, we see that we can address both questions clearly. To answer the first question, we look at the boldened "All" genres pink line, and since it is generally trending upwards, we can see that the sales price in USD over time (regardless of genre) does, in fact, seem to be increasing. And to address question #2, we can look at each individual trend line by genre, signified by the different colors, to see all the individual trends. By clicking on each value in the legend, we can toggle that trend line on and off, making it easier to see individual or high level trends.
+
+```{r}
+
+
+```
+
 #### Attribution of Sources
 
 -   1b: evaluating the output - Used chat gpt to figure out how to bypass errors in R
+-   2a: <https://plotly.com/r/bar-charts/> - Used this link to figure out how to do a stacked bar chart using plotly
+-   2a: <https://plotly.com/r/setting-graph-size/> - used this to help set the margin padding for the words in the chart
+-   2b: <https://dplyr.tidyverse.org/reference/bind_rows.html> - used this to combine data in both objects used in 2b, art_sales_by_year and average_price_genre
+-   2b: <https://plotly.com/r/hover-text-and-formatting/> - used for text formatting like hover over text with hoverinfo = "text"
+-   2b: <https://plotly.com/r/line-and-scatter/> - used for demonstrating lines and points together with mode = "lines+markers"
