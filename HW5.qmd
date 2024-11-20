@@ -1,0 +1,166 @@
+---
+title: "506Problem5"
+author: "Snigdha Pakala"
+format: html
+editor: visual
+---
+
+## Link to GitHub Repository:
+
+#### Part 1a:
+
+```{r}
+
+library(methods)
+
+# Defining and setting the rational class
+setClass(
+  "rational",
+  slots = c(numerator = "numeric", denominator = "numeric"),
+  prototype = list(numerator = 0, denominator = 1)
+)
+
+# Creating a constructor using "new"; Problem 1a, part 1
+rational <- function(numerator, denominator) {
+  if (denominator == 0) stop("Denominator cannot be zero.")
+  new("rational", numerator = numerator, denominator = denominator)
+}
+
+# Creating a validator that ensures the denominator is non-zero; Problem 1a, part 2
+setValidity("rational", function(object) {
+  if (object@denominator == 0) {
+    return("Denominator cannot be zero.")
+  }
+  TRUE
+})
+
+# Creating a show method to display the value; Problem 1a, part 3
+setMethod("show", "rational", function(object) {
+  cat(paste0(object@numerator, "/", object@denominator, "\n"))
+})
+
+# Creating the gcd function required in Problem 1a, part 7; recursive gcd function
+gcd <- function(a, b) {
+  if (b == 0) return(abs(a))
+  gcd(b, a %% b)
+}
+
+# Use gcd function to create simplify method; Problem 1a, part 4
+setGeneric("simplify", function(object) standardGeneric("simplify"))
+setMethod("simplify", "rational", function(object) {
+  divisor <- gcd(object@numerator, object@denominator)
+  object@numerator <- object@numerator / divisor
+  object@denominator <- object@denominator / divisor
+  object
+})
+
+# Creating a quotient method to calculate quotient of the rational; Problem 1a, part 5
+setGeneric("quotient", function(object, digits = NULL) standardGeneric("quotient"))
+setMethod("quotient", "rational", function(object, digits = NULL) {
+  result <- object@numerator / object@denominator
+  # Checking if user specified the number of digits of the quotient
+  if (!is.null(digits)) round(result, digits) else result
+})
+
+# Problem 1a, part 6: addition
+setMethod("+", signature(e1 = "rational", e2 = "rational"), function(e1, e2) {
+  # the logic below shows the following: a/b + c/d becomes ad/bd + cb/bd = ad+cb / bd
+  num <- e1@numerator * e2@denominator + e2@numerator * e1@denominator
+  denom <- e1@denominator * e2@denominator
+  # simplify the rational
+  simplify(rational(num, denom))
+})
+
+# Problem 1a, part 6: subtraction
+setMethod("-", signature(e1 = "rational", e2 = "rational"), function(e1, e2) {
+  # the logic below shows the following: a/b +-c/d becomes ad/bd - cb/bd = ad-cb / bd
+  num <- e1@numerator * e2@denominator - e2@numerator * e1@denominator
+  denom <- e1@denominator * e2@denominator
+    # simplify the rational
+  simplify(rational(num, denom))
+})
+
+# Problem 1a, part 6: multiplication
+setMethod("*", signature(e1 = "rational", e2 = "rational"), function(e1, e2) {
+  # the logic below shows the following: a/b * c/d becomes ac / bd
+  num <- e1@numerator * e2@numerator
+  denom <- e1@denominator * e2@denominator
+  # simplify the rational
+  simplify(rational(num, denom))
+})
+
+# Problem 1a, part 6: division
+setMethod("/", signature(e1 = "rational", e2 = "rational"), function(e1, e2) {
+  # Ensuring division by 0 errors
+  if (e2@numerator == 0) stop("Cannot divide by zero.")
+  # the logic below shows a/b / c/d which is a/b * d/c so we get ad/bc
+  num <- e1@numerator * e2@denominator
+  denom <- e1@denominator * e2@numerator
+  # simplify the rational
+  simplify(rational(num, denom))
+})
+
+# Lastly, create LCM function in Problem 1a, part 7, since gcd is above
+lcm <- function(a, b) {
+  abs(a * b) / gcd(a, b)
+}
+```
+
+#### Part 1b: 
+
+```{r, error=TRUE}
+# Use the rational class to create the following 3 objects:
+r1 <- rational(24, 6)
+r2 <- rational(7, 230)
+r3 <- rational(0, 4)
+
+# Evaluate the following:
+r1
+r3
+r1 + r2
+r1 - r2
+r1 * r2
+r1 / r2
+r1 + r3
+r1 * r3
+r2 / r3
+quotient(r1)
+quotient(r2)
+quotient(r2, digits = 3)
+quotient(r2, digits = 3.14)
+quotient(r2, digits = "avocado")
+q2 <- quotient(r2, digits = 3)
+q2
+quotient(r3)
+simplify(r1)
+simplify(r2)
+simplify(r3)
+```
+
+#### Part 1c:
+
+```{r}
+# Show that your validator does not allow the creation of rational’s with 0 denominator
+setValidity("rational", function(object) {
+  # In my code, I require that numerator and denominator are integers (single numeric objects) where the denominator is not equal to 0
+  if (length(object@numerator) != 1 || length(object@denominator) != 1) {
+    return("Numerator and denominator must be single numeric values.")
+  }
+  if (!is.numeric(object@numerator) || !is.numeric(object@denominator)) {
+    return("Both numerator and denominator must be numeric.")
+  }
+  if (object@denominator == 0) {
+    return("Denominator cannot be zero.")
+  }
+  TRUE
+})
+
+# Check other malformed input to your constructor: the following code will error
+new("rational", numerator = 3, denominator = 0) # errors because denominator is 0
+new("rational", numerator = "3", denominator = 4) # errors because numerator is string
+new("rational", numerator = c(3, 5), denominator = 4) # errors because of vector in numerator
+```
+
+#### Attribution of Sources
+
+-   1b: evaluating the output - Used chat gpt to figure out how to bypass errors in R
