@@ -335,7 +335,88 @@ The two questions this graph is meant to answer are:
 
 By combining the data to include each individual genre as well as an "all genres" trendline, we see that we can address both questions clearly. To answer the first question, we look at the boldened "All" genres pink line, and since it is generally trending upwards, we can see that the sales price in USD over time (regardless of genre) does, in fact, seem to be increasing. And to address question #2, we can look at each individual trend line by genre, signified by the different colors, to see all the individual trends. By clicking on each value in the legend, we can toggle that trend line on and off, making it easier to see individual or high level trends.
 
+### Problem 3
+
+#### Part 3a:
+
 ```{r}
+library(nycflights13)
+library(data.table)
+
+# Convert flights and airports to data.tables
+flights <- as.data.table(flights)
+airports <- as.data.table(airports)
+planes <- as.data.table(planes)
+
+#####################################################################
+# 1a in Problem Set 4: 
+#####################################################################
+# Generate a table (which can just be a nicely printed tibble) reporting the mean and median departure delay per airport.
+# Generate a second table (which again can be a nicely printed tibble) reporting the mean and median arrival delay per airport.
+# Exclude any destination with under 10 flights. Do this exclusion through code, not manually.
+
+#####################################################################
+# Problem Set 4, 1a, Departures:
+#####################################################################
+# Group by destination, count flights, and filter destinations with >= 10 flights
+flights_10_plus <- flights[, .N, by = dest][N >= 10] 
+
+# Join flights data to get corresponding details for destinations with >= 10 flights
+flights_10_plus <- flights[dest %in% flights_10_plus$dest]
+
+# Departure delays by origin
+flights_dep_stats <- flights_10_plus[, .(mean_dep_delay = round(mean(dep_delay, na.rm = TRUE), 5), median_dep_delay = round(median(dep_delay, na.rm = TRUE), 5)), by = origin]
+
+# Merge with airport names
+departures <- merge(flights_dep_stats, airports, by.x = "origin", by.y = "faa")[, .(name, mean_dep_delay, median_dep_delay)]
+
+# Order departures by descending mean delay
+departures <- departures[order(-mean_dep_delay)]
+
+# Display Departure Results
+departures
+
+#####################################################################
+# Problem Set 4, Part a, Arrivals:
+#####################################################################
+
+# Arrival delays by destination
+flights_arr_stats <- flights_10_plus[, .(mean_arr_delay = round(mean(arr_delay, na.rm = TRUE), 5), 
+                                         median_arr_delay = round(median(arr_delay, na.rm = TRUE), 5)), 
+                                     by = dest]
+
+# Merge with airport names for arrival stats
+arrivals <- merge(flights_arr_stats, airports, by.x = "dest", by.y = "faa", all.x = TRUE)
+
+# If name is NA, use faa (airport code) instead of name to include all airport destinations
+arrivals[, name := ifelse(is.na(name), as.character(dest), name)]
+
+# Order arrivals by descending mean delay
+arrivals <- arrivals[order(-mean_arr_delay)]
+
+# Select columns in the required order: name, mean_arr_delay, median_arr_delay
+arrivals <- arrivals[, .(name, mean_arr_delay, median_arr_delay)]
+
+# Display Arrival Results:
+arrivals
+
+
+#####################################################################
+# 1b in Problem Set 4: 
+#####################################################################
+# How many flights did the aircraft model with the fastest average speed take? Produce a tibble with 1 row, and entries for the model, average speed (in MPH) and number of flights.
+
+# Combine flights with planes by 'tailnum' (plane identification number) to get model in data
+flights_planes <- merge(flights, planes, by = "tailnum", all.x = TRUE)
+
+# Calculate speed in mph
+flights_planes[, speed_mph := distance / (air_time / 60)]
+
+# Group by plane model and calculate the average speed and number of flights
+fastest_plane <- flights_planes[, .(avg_speed_mph = round(mean(speed_mph, na.rm = TRUE), 4), num_flights = .N), by = model][order(-avg_speed_mph)][1]
+
+# Display the fastest plane's details
+fastest_plane
 
 
 ```
@@ -348,3 +429,4 @@ By combining the data to include each individual genre as well as an "all genres
 -   2b: <https://dplyr.tidyverse.org/reference/bind_rows.html> - used this to combine data in both objects used in 2b, art_sales_by_year and average_price_genre
 -   2b: <https://plotly.com/r/hover-text-and-formatting/> - used for text formatting like hover over text with hoverinfo = "text"
 -   2b: <https://plotly.com/r/line-and-scatter/> - used for demonstrating lines and points together with mode = "lines+markers"
+-   3: <https://www.rdocumentation.org/packages/data.table/versions/1.16.2/topics/merge> - double checking merge syntax for data tables
